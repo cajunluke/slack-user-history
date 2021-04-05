@@ -8,7 +8,7 @@
 
 import Foundation
 
-let IMPORTANT_KEYS = ["Name", "User ID", "Last active"]
+let IMPORTANT_KEYS = ["Name", "User ID", "Username", "Last active"]
 
 let dateFormatter = DateFormatter()
 dateFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -17,10 +17,11 @@ dateFormatter.dateFormat = "MMM dd, yyyy"
 struct User : CustomStringConvertible {
   var name: String
   var userID: String
+  var username: String
   var lastActive: Date?
   
   public var description: String {
-    var elements = [name, userID]
+    var elements = [name, userID, username]
     
     if let lastActive = self.lastActive {
       elements.append(dateFormatter.string(from: lastActive))
@@ -45,6 +46,8 @@ func parseCSVLine(_ line: String) -> [String] {
       currentElement = "\(currentElement)\(char)"
     }
   }
+  
+  elements.append(currentElement)
   
   return elements
 }
@@ -77,13 +80,18 @@ func processFile(_ csv: String) -> [String: User] {
         userID = csvLine[index]
       }
       
-      var lastActive:Date?
+      var username = ""
       if let index = columnIndices[IMPORTANT_KEYS[2]] {
+        username = csvLine[index]
+      }
+      
+      var lastActive:Date?
+      if let index = columnIndices[IMPORTANT_KEYS[3]] {
         let lastActiveString = csvLine[index]
         lastActive = dateFormatter.date(from:lastActiveString)
       }
       
-      users.append(User(name: name, userID: userID, lastActive: lastActive))
+      users.append(User(name: name, userID: userID, username: username, lastActive: lastActive))
     }
   }
   
@@ -96,6 +104,7 @@ func processFile(_ csv: String) -> [String: User] {
 }
 
 var userInfo: [String: User] = [:]
+
 for file in CommandLine.arguments {
   // skip any non-csv arguments, notably index 0
   if !file.hasSuffix(".csv") {
@@ -108,30 +117,19 @@ for file in CommandLine.arguments {
   
   let users = processFile(text)
   userInfo.merge(users) { (current, new) in
-    let latest: User, oldest: User
+    let latest: User
     if current.lastActive != nil && new.lastActive != nil {
       let currentDate = current.lastActive!
       let newDate = new.lastActive!
-      if currentDate < newDate {
-        latest = new
-        oldest = current
-      } else {
-        latest = current
-        oldest = new
-      }
+      
+      latest = newDate > currentDate ? new : current
     } else if current.lastActive != nil {
       latest = current
-      oldest = current
-    } else if new.lastActive != nil {
-      latest = new
-      oldest = new
     } else {
-      latest = User(name: "", userID: "", lastActive: nil)
-      oldest = latest
+      latest = new
     }
     
-    
-    return User(name: latest.name, userID: oldest.userID, lastActive: oldest.lastActive)
+    return User(name: latest.name, userID: latest.userID, username: latest.username, lastActive: latest.lastActive)
   }
 }
 
@@ -141,7 +139,7 @@ func quote(_ value: String) -> String {
 
 print(IMPORTANT_KEYS.map(quote).joined(separator: ","))
 userInfo.values.forEach {
-  var elements = [$0.name, $0.userID]
+  var elements = [$0.name, $0.userID, $0.username]
   
   if let lastActive = $0.lastActive {
     elements.append(dateFormatter.string(from: lastActive))
