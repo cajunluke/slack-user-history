@@ -13,6 +13,8 @@ let IMPORTANT_KEYS = ["Name", "User ID", "Username", "Last active"]
 if CommandLine.argc == 1 {
   let usage = """
   Usage: \(CommandLine.arguments[0]) [list of CSV files]
+  OR
+  Usage: swift main.swift [list of CSV files]
   
   CSV files must start with a header and must contain, at a minimum, the below
   columns, in any order; a user analytics export from Slack with "all columns"
