@@ -1,4 +1,4 @@
-# slack-user-history-test
+# slack-user-history
 Aggregate and keep Slack user history for longer than 90 days
 
 Can be compiled into an executable or run as a script with the `swift` command.
